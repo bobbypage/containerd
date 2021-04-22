@@ -90,6 +90,23 @@ is_preloaded() {
   grep -qs "${tar},${sha1}" "${KUBE_HOME}/preload_info"
 }
 
+# cgroupv2 setup
+if ! grep -q 'systemd.unified_cgroup_hierarchy=true' /proc/cmdline; then
+    echo "Setting up cgroupv2"
+
+    mount_path="/tmp/esp"
+    mkdir -p "${mount_path}"
+    esp_partition="/dev/sda12"
+    mount "${esp_partition}" "${mount_path}"
+    sed -i 's/systemd.unified_cgroup_hierarchy=false/systemd.unified_cgroup_hierarchy=true/g' "${mount_path}/efi/boot/grub.cfg"
+    umount "${mount_path}"
+    rmdir "${mount_path}"
+
+    echo "Reconfigured grub; rebooting..."
+    reboot
+fi
+
+
 # KUBE_ENV_METADATA is the metadata key for kubernetes envs.
 KUBE_ENV_METADATA="kube-env"
 fetch_env ${KUBE_ENV_METADATA}
